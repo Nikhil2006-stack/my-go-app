@@ -3,7 +3,18 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Nikhil K. — Full Stack Developer portfolio">
+  <meta name="description" content="Nikhil K. — Full Stack Developer portfolio specializing in Go, PostgreSQL, HTML, CSS, JavaScript, and Google Cloud Run.">
+  <meta name="author" content="Nikhil K.">
+  <meta name="keywords" content="Nikhil K, Full Stack Developer, Go Developer, Golang, PostgreSQL, Web Developer, Portfolio">
+  <meta name="theme-color" content="#0b1020">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Nikhil K. | Full Stack Developer">
+  <meta property="og:description" content="Hi, I'm Nikhil K. — a Full Stack Developer building reliable web applications with Go, PostgreSQL, HTML, CSS, and JavaScript.">
+  <meta property="og:url" content="https://my-go-app-1008298857757.asia-south1.run.app">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Nikhil K. | Full Stack Developer">
+  <meta name="twitter:description" content="Full Stack Developer portfolio built with Go, PostgreSQL, HTML, CSS, and JavaScript.">
+  <link rel="canonical" href="https://my-go-app-1008298857757.asia-south1.run.app/">
   <title>Nikhil K. | Full Stack Developer</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -28,9 +39,10 @@
       <div class="hero-copy">
         <p class="eyebrow"><span class="status-dot"></span> AVAILABLE FOR OPPORTUNITIES</p>
         <h1>Building digital<br><span class="gradient-text">experiences</span> that matter.</h1>
-<p class="hero-lead">Hi, I'm <strong>Nikhil K.</strong> — a Full Stack Developer who enjoys turning ideas into useful, reliable products for the web.</p>        <div class="hero-actions">
-<a class="button button-primary" href="#projects">Explore my work <span aria-hidden="true">↗</span></a>
-<a class="button button-secondary" href="#contact">Let's talk</a>
+        <p class="hero-lead">Hi, I'm <strong>Nikhil K.</strong> — a Full Stack Developer who enjoys turning ideas into useful, reliable products for the web.</p>
+        <div class="hero-actions">
+          <a class="button button-primary" href="#projects">Explore my work <span aria-hidden="true">↗</span></a>
+          <a class="button button-secondary" href="#contact">Let's talk</a>
         </div>
         <div class="hero-meta"><span>📍 India</span><span class="meta-divider"></span><span>Focused on web development</span></div>
       </div>
@@ -80,59 +92,107 @@
 
     <section class="section container" id="projects">
       <div class="section-heading"><p class="eyebrow">SELECTED WORK</p><h2>Featured <span class="gradient-text">projects</span></h2><p class="section-subtitle">A few projects will live here as I build and ship them.</p></div>
-      
-<div class="project-grid">
-  {{range .Projects}}
-  <article class="project-card">
-    <div class="project-art art-one">
-      <span>DATABASE / PROJECT</span>
-      <b>MY PROJECT</b>
-    </div>
-    <div class="project-info">
-      <h3>{{.Title}}</h3>
-      <p>{{.Description}}</p>
-      <div class="tags">
-        <span>{{.Technologies}}</span>
-      </div>
-      {{if .ProjectURL}}
-      <a href="{{.ProjectURL}}" target="_blank">Live Demo ↗</a>
-      {{end}}
-      {{if .GithubURL}}
-      <a href="{{.GithubURL}}" target="_blank">GitHub ↗</a>
-      {{end}}
-    </div>
-  </article>
-  {{else}}
-  <p>No projects found in database.</p>
-  {{end}}
-</div>
 
+      <div class="project-grid">
+        {{range $index, $proj := .Projects}}
+        <article class="project-card">
+          <div class="project-art {{if isOdd $index}}art-two{{else}}art-one{{end}}">
+            <span>DATABASE / PROJECT</span>
+            <b>{{$proj.Title}}</b>
+          </div>
+          <div class="project-info">
+            <h3>{{$proj.Title}}</h3>
+            <p>{{$proj.Description}}</p>
+            {{if $proj.TechList}}
+            <div class="tags">
+              {{range $proj.TechList}}
+              <span>{{.}}</span>
+              {{end}}
+            </div>
+            {{end}}
+            <div class="project-links">
+              {{if $proj.ProjectURL}}
+              <a href="{{$proj.ProjectURL}}" target="_blank" rel="noopener noreferrer">Live Demo ↗</a>
+              {{end}}
+              {{if $proj.GithubURL}}
+              <a href="{{$proj.GithubURL}}" target="_blank" rel="noopener noreferrer">GitHub ↗</a>
+              {{end}}
+            </div>
+          </div>
+        </article>
+        {{else}}
+        <p>No projects found in database.</p>
+        {{end}}
+      </div>
     </section>
 
+    <section class="contact-section" id="contact">
+      <div class="container contact-inner">
+        <p class="eyebrow">HAVE A PROJECT IN MIND?</p>
 
-<section class="contact-section" id="contact">
-  <div class="container contact-inner">
-    <p class="eyebrow">HAVE A PROJECT IN MIND?</p>
+        <h2>Let's build something<br>
+          <span class="gradient-text">meaningful.</span>
+        </h2>
 
-    <h2>Let's build something<br>
-      <span class="gradient-text">meaningful.</span>
-    </h2>
+        <p>I'm always open to learning, collaboration and new opportunities.</p>
 
-    <p>I'm always open to learning, collaboration and new opportunities.</p>
+        <form id="contactForm" class="contact-form" method="POST" action="/contact" novalidate>
+          <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
 
-    <a class="button button-primary"
-       href="mailto:nikhilnikki1704@gmail.com">Email me ↗</a>
+          <div class="hp-field" aria-hidden="true">
+            <label for="website">Website</label>
+            <input id="website" name="website" type="text" tabindex="-1" autocomplete="off">
+          </div>
 
-    <div class="social-links">
-      <a href="https://www.linkedin.com/in/nikhil-k-925349338/" target="_blank">LinkedIn ↗</a>
+          {{if .ContactSuccess}}
+          <div class="form-alert form-alert-success" role="status">{{.ContactSuccess}}</div>
+          {{end}}
+          {{if .ContactError}}
+          <div class="form-alert form-alert-error" role="alert">{{.ContactError}}</div>
+          {{end}}
+          <div id="contactAlert" class="form-alert" hidden role="status"></div>
 
-      <a href="https://github.com/Nikhil2006-stack/my-go-app" target="_blank">GitHub ↗</a>
+          <div class="contact-form-row">
+            <div class="contact-field">
+              <label for="contact-name">Your Name *</label>
+              <input id="contact-name" name="name" type="text" required minlength="2" maxlength="120" placeholder="Your name" autocomplete="name">
+            </div>
+            <div class="contact-field">
+              <label for="contact-email">Your Email *</label>
+              <input id="contact-email" name="email" type="email" required maxlength="254" placeholder="you@example.com" autocomplete="email">
+            </div>
+          </div>
 
-      <a href="/static/resume.pdf" target="_blank">View Resume ↗</a>
-    </div>
-  </div>
-</section>
+          <div class="contact-field">
+            <label for="contact-subject">Subject *</label>
+            <input id="contact-subject" name="subject" type="text" required minlength="2" maxlength="200" placeholder="Project inquiry or collaboration">
+          </div>
+
+          <div class="contact-field">
+            <label for="contact-message">Message *</label>
+            <textarea id="contact-message" name="message" rows="4" required minlength="10" maxlength="4000" placeholder="Tell me about your project or opportunity..."></textarea>
+          </div>
+
+          <button id="contactSubmitBtn" class="button button-primary contact-submit-btn" type="submit">
+            Send Message <span aria-hidden="true">↗</span>
+          </button>
+        </form>
+
+        <div class="contact-direct">
+          <a class="button button-secondary" href="mailto:nikhilnikki1704@gmail.com">Email me directly ↗</a>
+        </div>
+
+        <div class="social-links">
+          <a href="https://www.linkedin.com/in/nikhil-k-925349338/" target="_blank" rel="noopener noreferrer">LinkedIn ↗</a>
+
+          <a href="https://github.com/Nikhil2006-stack/my-go-app" target="_blank" rel="noopener noreferrer">GitHub ↗</a>
+
+          <a href="/static/resume.pdf" target="_blank" rel="noopener noreferrer">View Resume ↗</a>
+        </div>
+      </div>
+    </section>
   </main>
+
   <footer class="footer"><div class="container footer-inner"><a class="brand" href="#home"><span class="brand-mark">N</span><span>Nikhil<span class="brand-dot">.</span></span></a><p>Designed & built by Nikhil K. · <span id="year"></span></p><a href="#home">Back to top ↑</a></div></footer>
 </body>
 </html>

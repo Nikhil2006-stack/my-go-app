@@ -1,78 +1,70 @@
 package main
 
 import (
-	"html/template"
+	"context"
 	"log"
 	"net/http"
 	"os"
+	"time"
 
-	"github.com/jackc/pgx/v5/pgxpool"
+	"my-go-app/database"
+	"my-go-app/handlers"
+	"my-go-app/middleware"
 )
 
-type Project struct {
-	ID           int
-	Title        string
-	Description  string
-	Technologies string
-	ProjectURL   string
-	GithubURL    string
-}
-
-type PageData struct {
-	Projects []Project
-}
-
-// Kept so admin.go still compiles.
-// The online version does not connect to a database.
-var db *pgxpool.Pool
-
 func main() {
+	// Load local .env file if present (never overrides Cloud Run environment variables).
+	if err := database.LoadEnvFile(".env"); err != nil {
+		log.Println("Notice: could not read .env file:", err)
+	}
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
 
-	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
-	http.HandleFunc("/", homeHandler)
+	ctx := context.Background()
+	store, _, err := database.InitStore(ctx)
+	if err != nil {
+		log.Printf("WARNING: PostgreSQL initialization failed (%v). Falling back to in-memory store.", err)
+		store = database.NewFallbackStore()
+	}
+	defer store.Close()
+
+	auth := middleware.NewAuthManager()
+	if !auth.IsConfigured() {
+		log.Println("NOTICE: ADMIN_USER / ADMIN_PASSWORD not set yet. Set them in .env or Cloud Run env vars to enable admin login.")
+	}
+
+	srv := handlers.NewServer(store, auth, "templates")
+	handler := NewRouter(srv, "static")
+
+	httpServer := &http.Server{
+		Addr:              ":" + port,
+		Handler:           handler,
+		ReadHeaderTimeout: 10 * time.Second,
+		ReadTimeout:       15 * time.Second,
+		WriteTimeout:      15 * time.Second,
+		IdleTimeout:       60 * time.Second,
+	}
 
 	log.Println("Portfolio server running on port", port)
-	log.Fatal(http.ListenAndServe(":"+port, nil))
+	log.Fatal(httpServer.ListenAndServe())
 }
 
-func homeHandler(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/" {
-		http.NotFound(w, r)
-		return
-	}
+// NewRouter registers all public, static, health, and protected admin routes.
+func NewRouter(srv *handlers.Server, staticDir string) http.Handler {
+	mux := http.NewServeMux()
 
-	data := PageData{
-		Projects: []Project{
-			{
-				ID:           1,
-				Title:        "Smart Task Management System",
-				Description:  "A full-stack task management platform featuring secure user authentication, personalized dashboards, task creation and editing, priority-based organization, deadline tracking, task status management, and responsive design. Built with a scalable Go backend and PostgreSQL database.",
-				Technologies: "Go, PostgreSQL, HTML5, CSS3, JavaScript, REST API, SQL, Authentication",
-				ProjectURL:   "https://my-go-app-1008298857757.asia-south1.run.app",
-				GithubURL:    "https://github.com/Nikhil2006-stack/my-go-app",
-			},
-			{
-				ID:           2,
-				Title:        "Smart E-Commerce Platform",
-				Description:  "A full-stack e-commerce platform where users can browse products, add items to cart, manage orders, and securely register and log in. Includes a responsive user interface and database integration.",
-				Technologies: "Go, PostgreSQL, HTML, CSS, JavaScript, REST API",
-				GithubURL:    "https://github.com/Nikhil2006-stack/my-go-app",
-			},
-		},
-	}
+	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir(staticDir))))
+	mux.HandleFunc("/", srv.HomeHandler)
+	mux.HandleFunc("/contact", srv.ContactSubmitHandler)
+	mux.HandleFunc("/healthz", srv.HealthHandler)
 
-	tmpl, err := template.ParseFiles("templates/index.html")
-	if err != nil {
-		http.Error(w, "Could not load website template", http.StatusInternalServerError)
-		log.Println(err)
-		return
-	}
+	// Admin authentication & protected dashboard routes
+	mux.HandleFunc("/admin/login", srv.AdminLoginHandler)
+	mux.HandleFunc("/admin/logout", srv.AdminLogoutHandler)
+	mux.HandleFunc("/admin", srv.Auth.RequireAuth(srv.AdminDashboardHandler))
 
-	if err := tmpl.Execute(w, data); err != nil {
-		log.Println(err)
-	}
+	return middleware.SecurityHeaders(mux)
 }

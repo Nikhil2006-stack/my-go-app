@@ -1,8 +1,8 @@
-
+.git
 .env
 .env.*
-!.env.example
 *.exe
 *.log
 main.go.backup
+README.md
 
