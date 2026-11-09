@@ -1,0 +1,120 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Portfolio Admin</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #101827;
+            color: white;
+            padding: 30px;
+            max-width: 850px;
+            margin: auto;
+        }
+        input, textarea {
+            display: block;
+            width: 100%;
+            box-sizing: border-box;
+            padding: 12px;
+            margin: 8px 0 15px;
+            border-radius: 6px;
+            border: 1px solid #555;
+        }
+        button {
+            padding: 10px 18px;
+            background: #6c63ff;
+            color: white;
+            border: 0;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        .danger { background: #d93636; }
+        .project {
+            background: #1e293b;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+        }
+        label { display: block; }
+        a { color: #a5a0ff; }
+    </style>
+</head>
+<body>
+    <h1>Portfolio Admin Dashboard</h1>
+    <p><a href="/">View Portfolio</a></p>
+
+    <h2>Add New Project</h2>
+    <form method="POST" action="/admin">
+        <input type="hidden" name="action" value="create">
+
+        <label>Project Title
+            <input name="title" required>
+        </label>
+
+        <label>Description
+            <textarea name="description" required></textarea>
+        </label>
+
+        <label>Technologies
+            <input name="technologies">
+        </label>
+
+        <label>Project URL
+            <input name="project_url">
+        </label>
+
+        <label>GitHub URL
+            <input name="github_url">
+        </label>
+
+        <button type="submit">Add Project</button>
+    </form>
+
+    <h2>Existing Projects</h2>
+
+    {{range .Projects}}
+    <div class="project">
+        <h3>{{.Title}}</h3>
+
+        <form method="POST" action="/admin">
+            <input type="hidden" name="action" value="update">
+            <input type="hidden" name="id" value="{{.ID}}">
+
+            <label>Title
+                <input name="title" value="{{.Title}}" required>
+            </label>
+
+            <label>Description
+                <textarea name="description" required>{{.Description}}</textarea>
+            </label>
+
+            <label>Technologies
+                <input name="technologies" value="{{.Technologies}}">
+            </label>
+
+            <label>Project URL
+                <input name="project_url" value="{{.ProjectURL}}">
+            </label>
+
+            <label>GitHub URL
+                <input name="github_url" value="{{.GithubURL}}">
+            </label>
+
+            <button type="submit">Save Changes</button>
+        </form>
+
+        <form method="POST" action="/admin"
+              onsubmit="return confirm('Delete this project?')">
+            <input type="hidden" name="action" value="delete">
+            <input type="hidden" name="id" value="{{.ID}}">
+            <button class="danger" type="submit">Delete Project</button>
+        </form>
+    </div>
+    {{else}}
+    <p>No projects found.</p>
+    {{end}}
+</body>
+</html>
