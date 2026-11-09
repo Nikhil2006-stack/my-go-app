@@ -1,13 +1,10 @@
-
 package main
 
 import (
-	"context"
 	"html/template"
 	"log"
 	"net/http"
 	"os"
-	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -25,6 +22,8 @@ type PageData struct {
 	Projects []Project
 }
 
+// Kept so admin.go still compiles.
+// The online version does not connect to a database.
 var db *pgxpool.Pool
 
 func main() {
@@ -33,31 +32,9 @@ func main() {
 		port = "8080"
 	}
 
-	dbURL := os.Getenv("DATABASE_URL")
-	if dbURL == "" {
-		log.Fatal("DATABASE_URL is not set")
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	var err error
-	db, err = pgxpool.New(ctx, dbURL)
-	if err != nil {
-		log.Fatal("Database connection error:", err)
-	}
-	defer db.Close()
-
-	if err := db.Ping(ctx); err != nil {
-		log.Fatal("Database ping failed:", err)
-	}
-
-	log.Println("Connected to PostgreSQL successfully!")
-
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
-
 	http.HandleFunc("/", homeHandler)
-	http.Handle("/admin", adminAuth(http.HandlerFunc(adminHandler)))
+
 	log.Println("Portfolio server running on port", port)
 	log.Fatal(http.ListenAndServe(":"+port, nil))
 }
@@ -68,42 +45,24 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rows, err := db.Query(r.Context(), `
-		SELECT id, title, description, technologies, project_url, github_url
-		FROM projects
-		ORDER BY id DESC
-	`)
-	if err != nil {
-		http.Error(w, "Could not load projects", http.StatusInternalServerError)
-		log.Println(err)
-		return
-	}
-	defer rows.Close()
-
-	data := PageData{}
-
-	for rows.Next() {
-		var p Project
-		err := rows.Scan(
-			&p.ID,
-			&p.Title,
-			&p.Description,
-			&p.Technologies,
-			&p.ProjectURL,
-			&p.GithubURL,
-		)
-		if err != nil {
-			http.Error(w, "Could not read projects", http.StatusInternalServerError)
-			log.Println(err)
-			return
-		}
-		data.Projects = append(data.Projects, p)
-	}
-
-	if err := rows.Err(); err != nil {
-		http.Error(w, "Could not read projects", http.StatusInternalServerError)
-		log.Println(err)
-		return
+	data := PageData{
+		Projects: []Project{
+			{
+				ID:           1,
+				Title:        "Smart Task Management System",
+				Description:  "A full-stack task management platform featuring secure user authentication, personalized dashboards, task creation and editing, priority-based organization, deadline tracking, task status management, and responsive design. Built with a scalable Go backend and PostgreSQL database.",
+				Technologies: "Go, PostgreSQL, HTML5, CSS3, JavaScript, REST API, SQL, Authentication",
+				ProjectURL:   "https://my-go-app-1008298857757.asia-south1.run.app",
+				GithubURL:    "https://github.com/Nikhil2006-stack/my-go-app",
+			},
+			{
+				ID:           2,
+				Title:        "Smart E-Commerce Platform",
+				Description:  "A full-stack e-commerce platform where users can browse products, add items to cart, manage orders, and securely register and log in. Includes a responsive user interface and database integration.",
+				Technologies: "Go, PostgreSQL, HTML, CSS, JavaScript, REST API",
+				GithubURL:    "https://github.com/Nikhil2006-stack/my-go-app",
+			},
+		},
 	}
 
 	tmpl, err := template.ParseFiles("templates/index.html")
